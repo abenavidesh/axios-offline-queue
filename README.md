@@ -7,22 +7,20 @@
 
 > Powerful utilities for offline request queueing, seamless Axios integration, and robust connectivity detection for React and JavaScript applications.
 
-
 ## 📚 Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [API & Exports](#api--exports)
-- [Usage Examples](#usage-examples)
-  - [Basic Offline Queue](#basic-offline-queue-example)
-  - [React Full Example](#react-full-example)
-  - [Offline GET hook (`useOfflineGet`)](#offline-get-hook-useofflineget)
-  - [Service Usage (`offlineGetHandler`)](#service-usage-offlinegethandler)
-- [Event System](#event-system)
-- [Contributing & Issues](#contributing--issues)
-- [License](#license)
-- [Author](#author)
+- [🏆 Features](#-features)
+- [🔧 Installation](#-installation)
+- [🚀 Quick Start](#-quick-start)
+- [📦 API & Exports](#-api--exports)
+- [🧩 Basic Offline Queue Example](#-basic-offline-queue-example)
+- [📚 React Full Example](#-react-full-example)
+- [🔍 Offline GET Hook (`useOfflineGet`)](#-offline-get-hook-useofflineget)
+- [🧱 Service Usage (`offlineGetHandler`)](#-service-usage-offlinegethandler)
+- [🔔 Event System](#-event-system)
+- [🤝 Contributing & Issues](#-contributing--issues)
+- [📄 License](#-license)
+- [👤 Author](#-author)
 ---
 
 ## 🏆 Features
