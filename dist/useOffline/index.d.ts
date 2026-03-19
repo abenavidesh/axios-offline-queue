@@ -11,7 +11,7 @@ export type OfflineHookProps = {
     useLogs?: boolean;
 };
 /**
- * Returns an array of Axios response and error interceptors.
+ * Returns a tuple of Axios response and error interceptors.
  *
  * These interceptors enable offline support by:
  * - Logging API responses and errors (when enabled).
@@ -23,8 +23,11 @@ export type OfflineHookProps = {
  * @param {OfflineHookProps} props - Options for the hook.
  * @param {boolean} [props.useLogs=false] - Enables or disables logging.
  *
- * @returns {[function(AxiosResponse): AxiosResponse, function(AxiosError): Promise<never>]}
- *    Array containing the success and error interceptor respectively.
+ * @returns {[
+ *   (response: AxiosResponse) => AxiosResponse,
+ *   (error: AxiosError) => Promise<never>
+ * ]}
+ *    Tuple containing the success and error interceptor respectively.
  *
  * @example
  * import axios from 'axios';
@@ -37,5 +40,8 @@ export type OfflineHookProps = {
  *
  * @throws {Error} If the error is not due to offline connectivity, or if it can't be queued, the original error is rethrown.
  */
-export declare function offlineHook({ useLogs }: OfflineHookProps): (((response: AxiosResponse) => AxiosResponse) | ((error: AxiosError) => Promise<never>))[];
+export declare function offlineHook({ useLogs, }: OfflineHookProps): [
+    (response: AxiosResponse) => AxiosResponse,
+    (error: AxiosError) => Promise<never>
+];
 export default offlineHook;

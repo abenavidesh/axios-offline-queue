@@ -14,7 +14,7 @@ export type OfflineHookProps = {
 };
 
 /**
- * Returns an array of Axios response and error interceptors. 
+ * Returns a tuple of Axios response and error interceptors. 
  * 
  * These interceptors enable offline support by:
  * - Logging API responses and errors (when enabled).
@@ -26,8 +26,11 @@ export type OfflineHookProps = {
  * @param {OfflineHookProps} props - Options for the hook.
  * @param {boolean} [props.useLogs=false] - Enables or disables logging.
  * 
- * @returns {[function(AxiosResponse): AxiosResponse, function(AxiosError): Promise<never>]} 
- *    Array containing the success and error interceptor respectively.
+ * @returns {[
+ *   (response: AxiosResponse) => AxiosResponse,
+ *   (error: AxiosError) => Promise<never>
+ * ]} 
+ *    Tuple containing the success and error interceptor respectively.
  * 
  * @example
  * import axios from 'axios';
@@ -40,69 +43,67 @@ export type OfflineHookProps = {
  * 
  * @throws {Error} If the error is not due to offline connectivity, or if it can't be queued, the original error is rethrown.
  */
-export function offlineHook({ useLogs = false }: OfflineHookProps) {
-  return [
-    /**
-     * Response interceptor for Axios.
-     * Optionally logs API responses to the console.
-     *
-     * @param {AxiosResponse} response - The Axios response object.
-     * @returns {AxiosResponse} The unmodified response object.
-     */
-    (response: AxiosResponse): AxiosResponse => {
-      if (useLogs) {
-        console.log(`[API Response] ${response.status} ${response.config.url}`);
-      }
-      return response;
-    },
+export function offlineHook({
+  useLogs = false,
+}: OfflineHookProps): [
+  (response: AxiosResponse) => AxiosResponse,
+  (error: AxiosError) => Promise<never>
+] {
+  const onResponse = (response: AxiosResponse): AxiosResponse => {
+    if (useLogs) {
+      console.log(`[API Response] ${response.status} ${response.config.url}`);
+    }
+    return response;
+  };
 
-    /**
-     * Error interceptor for Axios.
-     * If the error is due to offline connectivity, the request is added to the offline queue,
-     * unless it's a GET request without the `X-Queue-Offline` override header.
-     * Optionally logs errors to the console.
-     *
-     * @param {AxiosError} error - The Axios error object.
-     * @returns {Promise<never>} Always rejects with the original error,
-     *   but may queue the request for future retry if offline.
-     *
-     * @example
-     * // Applied automatically via the use of `offlineHook` in an Axios interceptor.
-     */
-    async (error: AxiosError): Promise<never> => {
-      if (useLogs) {
-        console.error(
-          "[API Response Error]",
-          error.response?.data || error.message,
-        );
-      }
+  const onError = async (error: AxiosError): Promise<never> => {
+    if (useLogs) {
+      console.error(
+        "[API Response Error]",
+        error.response?.data || error.message,
+      );
+    }
 
-      // If the error is related to offline connectivity, attempt to queue the request for later
-      if (isOfflineError(error)) {
-        const requestConfig = error.config;
-        if (requestConfig) {
-          // Only queue non-GET requests, or GET requests with the X-Queue-Offline header
-          const shouldQueue =
-            requestConfig.method?.toUpperCase() !== "GET" ||
-            requestConfig.headers?.["X-Queue-Offline"] === "true";
+    // If the error is related to offline connectivity, attempt to queue the request for later
+    if (isOfflineError(error)) {
+      const requestConfig = error.config;
+      if (requestConfig) {
+        // Only queue non-GET requests, or GET requests with the X-Queue-Offline header
+        // Determines if the request should be queued:
+        // - If "X-Queue-Offline" header is explicitly "false", do NOT queue (even if not GET).
+        // - If "X-Queue-Offline" is "true", ALWAYS queue.
+        // - Otherwise, queue if the method is not GET.
+        let shouldQueue = false;
+        const headerValue = requestConfig.headers?.["X-Queue-Offline"];
 
-          if (shouldQueue) {
-            // Add the failed request to the offline queue for retrying when back online
-            await offlineQueue.addRequest(requestConfig);
+          if (typeof headerValue === "undefined" || headerValue === null) {
+            shouldQueue = requestConfig.method?.toUpperCase() !== "GET";
+          } else if (headerValue === "true") {
+            shouldQueue = true;
+          } else if (headerValue === "false") {
+            shouldQueue = false;
+          } else {
+            shouldQueue = requestConfig.method?.toUpperCase() !== "GET";
+          }
 
-            if (useLogs) {
-              console.log(
-                "[API] Request has been added to the offline queue due to connectivity issues.",
-              );
-            }
+        if (shouldQueue) {
+          // Add the failed request to the offline queue for retrying when back online
+          await offlineQueue.addRequest(requestConfig);
+
+          if (useLogs) {
+            console.log(
+              "[API] Request has been added to the offline queue due to connectivity issues.",
+            );
           }
         }
       }
+    }
 
-      // Always rethrow the error to be handled by the caller
-      return Promise.reject(error);
-    },
-  ];
+    // Always rethrow the error to be handled by the caller
+    return Promise.reject(error);
+  };
+
+  return [onResponse, onError];
 }
 
 export default offlineHook;

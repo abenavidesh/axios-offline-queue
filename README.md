@@ -1,15 +1,15 @@
 # axios-offline-queue
 
-[![npm version](https://img.shields.io/npm/v/axios-offline-queue.svg)](https://www.npmjs.com/package/axios-offline-queue)
-[![npm downloads](https://img.shields.io/npm/dm/axios-offline-queue.svg)](https://www.npmjs.com/package/axios-offline-queue)
-[![License](https://img.shields.io/npm/l/axios-offline-queue.svg)](./LICENSE)
-<!-- [![Build Status](https://github.com/youruser/axios-offline-queue/actions/workflows/ci.yml/badge.svg)](https://github.com/youruser/axios-offline-queue/actions) -->
+[![npm version](https://img.shields.io/npm/v/axios-offline-queue)](https://www.npmjs.com/package/axios-offline-queue)
+[![npm downloads](https://img.shields.io/npm/dm/axios-offline-queue)](https://www.npmjs.com/package/axios-offline-queue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 > Powerful utilities for offline request queueing, seamless Axios integration, and robust connectivity detection for React and JavaScript applications.
 
 ## 📚 Table of Contents
 
 - [🏆 Features](#-features)
+- [📝 Changelog](#-changelog)
 - [🔧 Installation](#-installation)
 - [🚀 Quick Start](#-quick-start)
 - [📦 API & Exports](#-api--exports)
@@ -21,17 +21,35 @@
 - [🤝 Contributing & Issues](#-contributing--issues)
 - [📄 License](#-license)
 - [👤 Author](#-author)
+
 ---
 
 ## 🏆 Features
 
 - **Transparent Axios interceptors for offline queueing**: Requests are automatically queued when offline and retried when connectivity returns.
+- **Per-request fine-grained control**: You can prevent a specific request from being queued by setting the `X-Queue-Offline: false` header. If this header is present (with any value considered falsy, like `'false'` or `false`), such requests will not be added to the offline queue. This is especially useful for requests that must only be executed online and should not be replayed later.  
+*Example:*
+  ```ts
+  axios.post("/api/data", body, { headers: { "X-Queue-Offline": "false" } })
+  ```
 - **Auto-connectivity detection**: Monitors both network status and Axios server reachability.
 - **LocalStorage-based persistent queue**: Survives page reloads and crashes.
 - **Hooks for React**: Simple state and cache management for your React UI.
 - **Manual queue management utilities**: Query queue size, clear queue, and handle events.
 - **Fully typed and documented API**.
 - **No runtime dependencies** except `axios`. React is only required if using hooks.
+
+---
+
+## 📝 Changelog
+
+- **Header-based exclusion**: You can now exclude any request from the offline queue by adding the header `X-Queue-Offline: false` (either as a string or boolean), allowing fine-grained control over which requests will be automatically retried when you're back online.  
+Quick example:  
+  ```js
+  axios.post("/only-online", body, { headers: { "X-Queue-Offline": "false" } })
+  ```
+  With this, that request will *never* be queued if you're offline.
+- **Improved types in `useOfflineGet*`*: The `useOfflineGet` hook now returns not only the `data`, but also the complete response (`response`), aligning the types with the standard Axios pattern (`AxiosResponse<TData>`). This provides you full access to status, headers, etc., along with the main data.
 
 ---
 
@@ -57,17 +75,29 @@ import { offlineHook, initializeOfflineSupport } from "axios-offline-queue";
 
 // Apply offline interceptors to your Axios instance
 const api = axios.create({ baseURL: "/api" });
-const [onSuccess, onError] = offlineHook();
+const [onSuccess, onError] = offlineHook({useLogs:true}); // You also can use {}
 api.interceptors.response.use(onSuccess, onError);
 
 // Alternatively, you can use destructuring:
- /*
-  *  api.interceptors.response.use(...offlineHook());
-  */
+/*
+ *  api.interceptors.response.use(...offlineHook());
+ */
 
 // Initialize global offline support (call last, with your AxiosInstance)
 initializeOfflineSupport(api);
 ```
+
+**Skipping offline queue for specific requests**  
+If you want a certain request to *never* be queued (for example, login or payment), set the special header `X-Queue-Offline: false` in that Axios request. This instructs the interceptor not to queue that specific request when offline, letting it fail immediately as if no queue exists.
+
+```ts
+axios.post("/critical-only-online", data, {
+  headers: { "X-Queue-Offline": "false" },
+});
+```
+
+You may also set this header as a boolean value (`false`) when using some clients.  
+The header is detected per request; the value is interpreted as falsy for `"false"`, `false`, or `0`.
 
 ---
 
@@ -75,15 +105,17 @@ initializeOfflineSupport(api);
 
 All exports are fully typed and documented.
 
-| Export                    | Description                                                                                 |
-|---------------------------|---------------------------------------------------------------------------------------------|
-| **offlineHook**           | Axios response interceptors for queuing requests when offline.                              |
-| **initializeOfflineSupport** | Sets up global listeners for connectivity changes.                                         |
-| **getOfflineQueueSize**   | Returns the number of queued requests.                                                      |
-| **clearOfflineQueue**     | Clears all requests from the offline queue.                                                 |
-| **offlineQueue**          | Singleton queue instance for advanced/manual manipulation. Includes event system.            |
-| **getConnectivityStatus** | Returns `{ online, serverReachable }` representing current network/server reachability.      |
+
+| Export                           | Description                                                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **offlineHook**                  | Axios response interceptors for queuing requests when offline. (`X-Queue-Offline: false` prevents queueing per-request) |
+| **initializeOfflineSupport**     | Sets up global listeners for connectivity changes.                                                                      |
+| **getOfflineQueueSize**          | Returns the number of queued requests.                                                                                  |
+| **clearOfflineQueue**            | Clears all requests from the offline queue.                                                                             |
+| **offlineQueue**                 | Singleton queue instance for advanced/manual manipulation. Includes event system.                                       |
+| **getConnectivityStatus**        | Returns `{ online, serverReachable }` representing current network/server reachability.                                 |
 | **onQueueEvent / offQueueEvent** | Low-level API for subscribing/unsubscribing to global queue events (usually not required if you use `offlineQueue.on`). |
+
 
 ---
 
@@ -94,7 +126,7 @@ import { offlineHook, getOfflineQueueSize, clearOfflineQueue } from "axios-offli
 import axios from "axios";
 
 // Setup interceptor
-const [respOk, respError] = offlineHook();
+const [respOk, respError] = offlineHook({});
 axios.interceptors.response.use(respOk, respError);
 
 // Query queue size
@@ -102,6 +134,9 @@ const enCola = getOfflineQueueSize();
 
 // Clear the queue
 clearOfflineQueue();
+
+// Example: Making a request that will NOT be queued if offline
+axios.post("/not-queued", data, { headers: { "X-Queue-Offline": "false" }});
 ```
 
 ---
@@ -182,7 +217,7 @@ In addition to offline queueing for mutation requests, this package provides a s
 
 #### Concept
 
-- GETs are _not_ queued.
+- GETs are *not* queued.
 - If a GET fails due to offline or network error:
   - The hook tries to return the last known good result (stored by default in `localStorage`).
 - Fully customizable:
@@ -191,10 +226,15 @@ In addition to offline queueing for mutation requests, this package provides a s
 
 #### API
 
+The return type of the hook has been improved to closely match Axios's pattern. Now, instead of returning just `data`, you also get a `response` and the typing matches the `AxiosResponse<TData>` (see below).
+
 ```ts
-type UseOfflineGetOptions<TData> = {
+import type { AxiosResponse } from "axios";
+
+// options
+type UseOfflineGetOptions<TData, TResponse = AxiosResponse<TData>> = {
   key: string;
-  fetcher: () => Promise<TData>;
+  fetcher: () => Promise<TResponse>;
   initialData?: TData;
   storage?: {
     get: (key: string) => TData | null;
@@ -215,8 +255,9 @@ type UseOfflineGetOptions<TData> = {
 Returns:
 
 ```ts
-type UseOfflineGetState<TData> = {
+type UseOfflineGetState<TData, TResponse = AxiosResponse<TData>> = {
   data: TData | null;
+  response?: TResponse | null; // RESPONSE: Now aligned with Axios pattern
   isLoading: boolean;
   error: unknown;
   isFromCache: boolean;
@@ -234,9 +275,9 @@ import api from "./api"; // your axios instance with offlineHook + initializeOff
 type User = { id: string; name: string };
 
 function UsersList() {
-  const { data, isLoading, error, isFromCache } = useOfflineGet<User[]>({
+  const { data, response, isLoading, error, isFromCache } = useOfflineGet<User[]>({
     key: "users-list",
-    fetcher: () => api.get<User[]>("/users").then((r) => r.data),
+    fetcher: () => api.get<User[]>("/users"),
   });
 
   if (isLoading && !data) return <div>Loading users...</div>;
@@ -250,6 +291,7 @@ function UsersList() {
           <li key={user.id}>{user.name}</li>
         ))}
       </ul>
+      {response && <div>Raw status: {response.status}</div>}
     </div>
   );
 }
@@ -270,7 +312,7 @@ const myStorage = {
 
 const state = useOfflineGet({
   key: "products",
-  fetcher: () => api.get("/products").then((r) => r.data),
+  fetcher: () => api.get("/products"),
   storage: myStorage,
 });
 ```
@@ -295,7 +337,7 @@ const deserializeSecret = (raw: string): SecretData =>
 function SecretComponent() {
   const state = useOfflineGet<SecretData>({
     key: "secret-key",
-    fetcher: () => api.get<SecretData>("/secret").then((r) => r.data),
+    fetcher: () => api.get<SecretData>("/secret"),
     serialize: serializeSecret,
     deserialize: deserializeSecret,
   });
@@ -304,7 +346,7 @@ function SecretComponent() {
 }
 ```
 
-> ⚠️ **Security:** This package does _not_ include out-of-the-box encryption! For sensitive data, you should use `serialize`/`deserialize` or a custom `storage` with encryption. Always review your app's security best practices.
+> ⚠️ **Security:** This package does *not* include out-of-the-box encryption! For sensitive data, you should use `serialize`/`deserialize` or a custom `storage` with encryption. Always review your app's security best practices.
 
 ---
 
@@ -315,9 +357,11 @@ Prefer to use the same offline cache logic in plain TypeScript services (no hook
 #### Basic API
 
 ```ts
-type OfflineGetHandlerOptions<TData> = {
+import type { AxiosResponse } from "axios";
+
+type OfflineGetHandlerOptions<TData, TResponse = AxiosResponse<TData>> = {
   key: string;
-  fetcher: Promise<TData> | (() => Promise<TData>);
+  fetcher: Promise<TResponse> | (() => Promise<TResponse>);
   initialData?: TData;
   storage?: {
     get: (key: string) => TData | null;
@@ -329,8 +373,9 @@ type OfflineGetHandlerOptions<TData> = {
   enabled?: boolean;
 };
 
-type OfflineGetHandlerResult<TData> = {
+type OfflineGetHandlerResult<TData, TResponse = AxiosResponse<TData>> = {
   data: TData | null;
+  response?: TResponse | null;
   isLoading: boolean;
   error: unknown;
   isFromCache: boolean;
@@ -348,12 +393,12 @@ type User = { id: string; name: string };
 
 export const getUsers = async (): Promise<User[] | null> => {
   try {
-    const { data } = await offlineGetHandler<User[]>({
+    const { data, response } = await offlineGetHandler<User[]>({
       key: "users",
       // You can pass a promise...
-      fetcher: api.get<User[]>("/users").then((r) => r.data),
+      fetcher: api.get<User[]>("/users"),
       // ...or a function returning a promise:
-      // fetcher: () => api.get<User[]>("/users").then(r => r.data),
+      // fetcher: () => api.get<User[]>("/users"),
     });
 
     return data;
@@ -367,7 +412,7 @@ export const getUsers = async (): Promise<User[] | null> => {
 #### Behavior Notes
 
 - If **offline**, `offlineGetHandler`:
-  - Does _not_ attempt the call.
+  - Does *not* attempt the call.
   - Returns the last cached value (if available) or `initialData`.
 - On network/offline error:
   - Tries to return cached value.
@@ -394,7 +439,7 @@ Available event types:
   - Emitted when `processQueue()` finishes one complete cycle.
   - Payload: `undefined`
 - **"request-success"**  
-  - Fired when a request is retried _and_ succeeds, and is then removed from the queue.
+  - Fired when a request is retried *and* succeeds, and is then removed from the queue.
   - Payload:
     ```ts
     {

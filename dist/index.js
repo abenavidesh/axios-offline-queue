@@ -17,11 +17,11 @@ const Q = {
   Q[t].forEach((n) => {
     try {
       n(e);
-    } catch (i) {
+    } catch (a) {
       console.error(
         `[Offline Queue] Listener for event "${t}" threw an error. This does not affect other listeners.
 Details:`,
-        i
+        a
       );
     }
   });
@@ -230,10 +230,10 @@ class M {
     for (const n of r)
       try {
         await this.processRequest(n);
-      } catch (i) {
+      } catch (a) {
         console.error(
           `[Offline Queue] Error while processing request ${n.id}:`,
-          i
+          a
         );
       }
     this.isProcessing = !1, g("queue-processed", void 0);
@@ -253,7 +253,7 @@ class M {
    * ```
    */
   async processRequest(e) {
-    var n, i, s;
+    var n, a, l;
     if (!this.apiClient) return;
     if (!await v()) {
       console.log(
@@ -263,9 +263,9 @@ class M {
     }
     try {
       e.retryCount > 0 && await new Promise(
-        (l) => setTimeout(l, K * e.retryCount)
+        (i) => setTimeout(i, K * e.retryCount)
       );
-      const { transformRequest: f, transformResponse: a, ...o } = e.config, d = await this.apiClient(o);
+      const { transformRequest: u, transformResponse: s, ...o } = e.config, c = await this.apiClient(o);
       L(e.id), console.log(
         `[Offline Queue] Request ${e.id} sent successfully.`
       ), this.processCallback && this.processCallback(e, !0), this.hasServerConnectivityIssue && navigator.onLine && (this.hasServerConnectivityIssue = !1, g("connection-restored", {
@@ -275,22 +275,22 @@ class M {
       })), g("request-success", {
         request: e,
         success: !0,
-        response: d
+        response: c
       }), g("request-processed", {
         request: e,
         success: !0,
-        response: d
+        response: c
       });
-    } catch (f) {
-      const a = f, o = ((n = a.response) == null ? void 0 : n.status) ?? null;
-      if (!navigator.onLine || a.code === "ERR_NETWORK" || ((i = a.message) == null ? void 0 : i.includes("Network Error")) || ((s = a.message) == null ? void 0 : s.includes("timeout"))) {
+    } catch (u) {
+      const s = u, o = ((n = s.response) == null ? void 0 : n.status) ?? null;
+      if (!navigator.onLine || s.code === "ERR_NETWORK" || ((a = s.message) == null ? void 0 : a.includes("Network Error")) || ((l = s.message) == null ? void 0 : l.includes("timeout"))) {
         console.log(
           `[Offline Queue] Network error: Request ${e.id} stays in queue.`
         ), navigator.onLine && !this.hasServerConnectivityIssue && (this.hasServerConnectivityIssue = !0, g("connection-lost", {
           kind: "server",
           online: !0,
           serverReachable: !1,
-          error: a
+          error: s
         }));
         return;
       }
@@ -301,12 +301,12 @@ class M {
           request: e,
           success: !1,
           status: o,
-          error: a
+          error: s
         }), g("request-processed", {
           request: e,
           success: !1,
           status: o,
-          error: a
+          error: s
         });
         return;
       }
@@ -317,17 +317,17 @@ class M {
           request: e,
           success: !1,
           status: o,
-          error: a
+          error: s
         }), g("request-processed", {
           request: e,
           success: !1,
           status: o,
-          error: a
+          error: s
         });
       else {
         e.retryCount++;
-        const l = p(), h = l.findIndex((u) => u.id === e.id);
-        h !== -1 && (l[h] = e, localStorage.setItem("offline_queue", JSON.stringify(l)));
+        const i = p(), h = i.findIndex((d) => d.id === e.id);
+        h !== -1 && (i[h] = e, localStorage.setItem("offline_queue", JSON.stringify(i)));
       }
     }
   }
@@ -374,12 +374,12 @@ class M {
     x(), console.log("[Offline Queue] Queue cleared.");
   }
 }
-const O = new M(), X = () => typeof navigator > "u" ? !0 : navigator.onLine, W = async (t) => typeof navigator > "u" ? !0 : await v(t), z = async ({
+const O = new M(), X = () => typeof navigator > "u" ? !0 : navigator.onLine, U = async (t) => typeof navigator > "u" ? !0 : await v(t), z = async ({
   serverURL: t
 }) => ({
   online: X(),
-  serverReachable: t ? await W(t) : !0
-}), V = (t) => {
+  serverReachable: t ? await U(t) : !0
+}), Z = (t) => {
   O.initialize(t);
   const e = Y(
     async () => {
@@ -403,12 +403,12 @@ const O = new M(), X = () => typeof navigator > "u" ? !0 : navigator.onLine, W =
   return !1;
 }, ee = () => O.getQueueSize(), te = () => {
   O.clearQueue();
-}, j = (t, e) => ({
+}, W = (t, e) => ({
   get: (r) => {
     if (typeof window > "u" || !window.localStorage) return null;
     try {
       const n = window.localStorage.getItem(r);
-      return n ? (e ?? ((s) => JSON.parse(s)))(n) : null;
+      return n ? (e ?? ((l) => JSON.parse(l)))(n) : null;
     } catch {
       return null;
     }
@@ -416,8 +416,8 @@ const O = new M(), X = () => typeof navigator > "u" ? !0 : navigator.onLine, W =
   set: (r, n) => {
     if (!(typeof window > "u" || !window.localStorage))
       try {
-        const s = (t ?? ((f) => JSON.stringify(f)))(n);
-        window.localStorage.setItem(r, s);
+        const l = (t ?? ((u) => JSON.stringify(u)))(n);
+        window.localStorage.setItem(r, l);
       } catch {
       }
   },
@@ -434,51 +434,51 @@ function re(t) {
     key: e,
     fetcher: r,
     initialData: n,
-    storage: i,
-    serialize: s,
-    deserialize: f,
-    enabled: a = !0
-  } = t, o = i ?? j(s, f), [d, l] = y(n ?? null), [h, u] = y(!1), [C, R] = y(null), [b, c] = y(!1), [E, q] = y(!1);
+    storage: a,
+    serialize: l,
+    deserialize: u,
+    enabled: s = !0
+  } = t, o = a ?? W(l, u), [c, i] = y(n ?? null), [h, d] = y(!1), [C, E] = y(null), [b, f] = y(!1), [R, q] = y(!1);
   T(() => {
     const w = o.get(e);
-    w !== null && (l(w), q(!0), c(!0));
+    w !== null && (i(w), q(!0), f(!0));
   }, [o, e]);
   const k = F(async () => {
-    if (a) {
-      u(!0), R(null);
+    if (s) {
+      d(!0), E(null);
       try {
         const { online: w } = await z({});
         if (!w) {
           const $ = o.get(e);
-          $ !== null && (l($), q(!0), c(!0)), u(!1);
+          $ !== null && (i($), q(!0), f(!0)), d(!1);
           return;
         }
         const S = await r();
-        l(S), c(!1), q(!0), o.set(e, S), u(!1);
+        i(S), f(!1), q(!0), o.set(e, S), d(!1);
       } catch (w) {
-        if (R(w), w instanceof Error && N(w)) {
+        if (E(w), w instanceof Error && N(w)) {
           const S = o.get(e);
           if (S !== null) {
-            l(S), q(!0), c(!0), u(!1);
+            i(S), q(!0), f(!0), d(!1);
             return;
           }
         }
-        u(!1);
+        d(!1);
       }
     }
-  }, [f, a, o, r, e, s]);
+  }, [u, s, o, r, e, l]);
   return T(() => {
-    a && k();
-  }, [a, k]), {
-    data: d,
+    s && k();
+  }, [s, k]), {
+    data: c,
     isLoading: h,
     error: C,
     isFromCache: b,
-    hasCache: E,
+    hasCache: R,
     refetch: k
   };
 }
-const B = (t, e) => ({
+const j = (t, e) => ({
   /**
    * Retrieve a value from localStorage.
    */
@@ -486,7 +486,7 @@ const B = (t, e) => ({
     if (typeof window > "u" || !window.localStorage) return null;
     try {
       const n = window.localStorage.getItem(r);
-      return n ? (e ?? ((s) => JSON.parse(s)))(n) : null;
+      return n ? (e ?? ((l) => JSON.parse(l)))(n) : null;
     } catch {
       return null;
     }
@@ -497,8 +497,8 @@ const B = (t, e) => ({
   set: (r, n) => {
     if (!(typeof window > "u" || !window.localStorage))
       try {
-        const s = (t ?? ((f) => JSON.stringify(f)))(n);
-        window.localStorage.setItem(r, s);
+        const l = (t ?? ((u) => JSON.stringify(u)))(n);
+        window.localStorage.setItem(r, l);
       } catch {
       }
   },
@@ -517,46 +517,46 @@ const B = (t, e) => ({
     key: e,
     fetcher: r,
     initialData: n,
-    storage: i,
-    serialize: s,
-    deserialize: f,
-    enabled: a = !0
-  } = t, o = i ?? B(s, f);
-  let d = n ?? null, l = null, h = !1, u = !1;
+    storage: a,
+    serialize: l,
+    deserialize: u,
+    enabled: s = !0
+  } = t, o = a ?? j(l, u);
+  let c = n ?? null, i = null, h = !1, d = !1;
   const C = o.get(e);
-  if (C !== null && (d = C, h = !0, u = !0), !a)
+  if (C !== null && (c = C, h = !0, d = !0), !s)
     return {
-      data: d,
+      data: c,
       isLoading: !1,
-      error: l,
+      error: i,
       isFromCache: h,
-      hasCache: u
+      hasCache: d
     };
-  const { online: R } = await z({});
-  if (!R)
+  const { online: E } = await z({});
+  if (!E)
     return {
-      data: d,
+      data: c,
       isLoading: !1,
-      error: l,
+      error: i,
       isFromCache: h,
-      hasCache: u
+      hasCache: d
     };
   const b = typeof r == "function" ? r : () => r;
   try {
-    const c = await b();
-    return d = c, h = !1, u = !0, o.set(e, c), {
-      data: d,
+    const f = await b();
+    return c = f, h = !1, d = !0, o.set(e, f), {
+      data: c,
       isLoading: !1,
-      error: l,
+      error: i,
       isFromCache: h,
-      hasCache: u
+      hasCache: d
     };
-  } catch (c) {
-    if (l = c, c instanceof Error && N(c)) {
-      const E = o.get(e);
-      if (E !== null)
+  } catch (f) {
+    if (i = f, f instanceof Error && N(f)) {
+      const R = o.get(e);
+      if (R !== null)
         return {
-          data: E,
+          data: R,
           isLoading: !1,
           error: null,
           isFromCache: !0,
@@ -564,53 +564,36 @@ const B = (t, e) => ({
         };
     }
     throw new Error(
-      `[offlineGetHandler] Fetch failed and no cached data is available: ${c instanceof Error ? c.message : String(c)}`
+      `[offlineGetHandler] Fetch failed and no cached data is available: ${f instanceof Error ? f.message : String(f)}`
     );
   }
 };
-function oe({ useLogs: t = !1 }) {
-  return [
-    /**
-     * Response interceptor for Axios.
-     * Optionally logs API responses to the console.
-     *
-     * @param {AxiosResponse} response - The Axios response object.
-     * @returns {AxiosResponse} The unmodified response object.
-     */
-    (e) => (t && console.log(`[API Response] ${e.status} ${e.config.url}`), e),
-    /**
-     * Error interceptor for Axios.
-     * If the error is due to offline connectivity, the request is added to the offline queue,
-     * unless it's a GET request without the `X-Queue-Offline` override header.
-     * Optionally logs errors to the console.
-     *
-     * @param {AxiosError} error - The Axios error object.
-     * @returns {Promise<never>} Always rejects with the original error,
-     *   but may queue the request for future retry if offline.
-     *
-     * @example
-     * // Applied automatically via the use of `offlineHook` in an Axios interceptor.
-     */
-    async (e) => {
-      var r, n, i;
-      if (t && console.error(
-        "[API Response Error]",
-        ((r = e.response) == null ? void 0 : r.data) || e.message
-      ), N(e)) {
-        const s = e.config;
-        s && (((n = s.method) == null ? void 0 : n.toUpperCase()) !== "GET" || ((i = s.headers) == null ? void 0 : i["X-Queue-Offline"]) === "true") && (await O.addRequest(s), t && console.log(
+function oe({
+  useLogs: t = !1
+}) {
+  return [(n) => (t && console.log(`[API Response] ${n.status} ${n.config.url}`), n), async (n) => {
+    var a, l, u, s;
+    if (t && console.error(
+      "[API Response Error]",
+      ((a = n.response) == null ? void 0 : a.data) || n.message
+    ), N(n)) {
+      const o = n.config;
+      if (o) {
+        let c = !1;
+        const i = (l = o.headers) == null ? void 0 : l["X-Queue-Offline"];
+        typeof i > "u" || i === null ? c = ((u = o.method) == null ? void 0 : u.toUpperCase()) !== "GET" : i === "true" ? c = !0 : i === "false" ? c = !1 : c = ((s = o.method) == null ? void 0 : s.toUpperCase()) !== "GET", c && (await O.addRequest(o), t && console.log(
           "[API] Request has been added to the offline queue due to connectivity issues."
         ));
       }
-      return Promise.reject(e);
     }
-  ];
+    return Promise.reject(n);
+  }];
 }
 export {
   te as clearOfflineQueue,
   z as getConnectivityStatus,
   ee as getOfflineQueueSize,
-  V as initializeOfflineSupport,
+  Z as initializeOfflineSupport,
   N as isOfflineError,
   J as offQueueEvent,
   ne as offlineGetHandler,
